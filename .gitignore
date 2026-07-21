@@ -1,0 +1,46 @@
+# Node.js / PNPM
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+
+# Build and Compilation outputs
+dist/
+.next/
+out/
+build/
+*.tsbuildinfo
+
+# Environment variables & Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging
+
+# Database / Prisma generated files (if not generating directly to node_modules)
+# (Note: Prisma client by default is generated inside node_modules, which is already ignored)
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Monorepo/CI tools
+.turbo/
+.vercel/
