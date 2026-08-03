@@ -6,3 +6,5 @@ export * from './components/StatusChip';
 export * from './components/SalesMetricCard';
 export * from './components/EmptyState';
 export * from './components/Table';
+export * from './components/Input';
+export * from './components/Modal';

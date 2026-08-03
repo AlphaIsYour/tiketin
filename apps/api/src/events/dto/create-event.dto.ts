@@ -11,7 +11,7 @@ import {
     MinLength,
     ValidateIf,
 } from 'class-validator';
-import { EventCapacityMode, EventVisibility } from '@prisma/client';
+import { EventCapacityMode, EventVisibility } from '@tiketin/db';
 
 export class CreateEventDto {
     @IsString()

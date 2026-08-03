@@ -1,7 +1,8 @@
-// apps/api/src/payments/payments.service.ts (edit: initiate signature accepts finishRedirectUrl)
+// apps/api/src/payments/payments.service.ts (edit: send payment-confirmed email after ticket issuance)
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TicketsService } from '../tickets/tickets.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentProvider } from './payment-provider.interface';
 import { PAYMENT_PROVIDER } from './payment-provider.token';
 import { MidtransNotificationDto } from './dto/midtrans-notification.dto';
@@ -13,6 +14,7 @@ export class PaymentsService {
     constructor(
         private prisma: PrismaService,
         private ticketsService: TicketsService,
+        private notificationsService: NotificationsService,
         @Inject(PAYMENT_PROVIDER) private provider: PaymentProvider,
     ) { }
 
@@ -92,6 +94,7 @@ export class PaymentsService {
             });
 
             await this.ticketsService.issueForOrder(payment.orderId);
+            void this.notificationsService.sendPaymentConfirmedEmail(payment.orderId);
             return { success: true };
         }
 

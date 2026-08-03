@@ -1,6 +1,6 @@
 // apps/api/src/events/events.service.ts
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { EventStatus, Prisma } from '@prisma/client';
+import { EventStatus, Prisma } from '@tiketin/db';
 import { randomSlugSuffix, slugify } from '@tiketin/core';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';

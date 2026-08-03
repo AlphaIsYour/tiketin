@@ -1,0 +1,13 @@
+/* apps/admin/src/app/globals.css */
+@import '@tiketin/ui/src/tokens.css';
+@import 'remixicon/fonts/remixicon.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--color-gray-50);
+    color: var(--color-gray-900);
+    font-size: 14px;
+}

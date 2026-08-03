@@ -2,9 +2,9 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { generateGuestAccessToken, generateOrderCode } from '@tiketin/core';
-import { hashToken } from '@tiketin/auth';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 
 const CHECKOUT_TTL_MINUTES = 15;
@@ -13,7 +13,11 @@ const WEB_URL = process.env.APP_WEB_URL as string;
 
 @Injectable()
 export class OrdersService {
-    constructor(private prisma: PrismaService, private paymentsService: PaymentsService) { }
+    constructor(
+        private prisma: PrismaService,
+        private paymentsService: PaymentsService,
+        private notificationsService: NotificationsService,
+    ) { }
 
     async create(dto: CreateOrderDto, buyerUserId?: string) {
         const event = await this.prisma.event.findFirst({
@@ -35,7 +39,6 @@ export class OrdersService {
         });
 
         const guestAccessToken = generateGuestAccessToken();
-        const guestAccessTokenHash = hashToken(guestAccessToken);
 
         const order = await this.prisma.$transaction(async (tx) => {
             let subtotal = 0;
@@ -95,7 +98,7 @@ export class OrdersService {
                     buyerUserId: buyerUserId ?? null,
                     buyerEmail: dto.buyerEmail,
                     buyerFullName: dto.buyerFullName,
-                    guestAccessTokenHash,
+                    guestAccessToken,
                     eventId: dto.eventId,
                     organizerId: event.organizerId,
                     subtotalAmount: subtotal,
@@ -120,6 +123,8 @@ export class OrdersService {
             finishRedirectUrl,
         );
 
+        void this.notificationsService.sendOrderCreatedEmail(order.id);
+
         return { order, payment, guestAccessToken };
     }
 
@@ -135,14 +140,13 @@ export class OrdersService {
         if (!order) throw new NotFoundException('Order not found');
 
         const ownedByUser = viewerUserId && order.buyerUserId === viewerUserId;
-        const ownedByGuestToken =
-            !!guestToken && !!order.guestAccessTokenHash && hashToken(guestToken) === order.guestAccessTokenHash;
+        const ownedByGuestToken = !!guestToken && !!order.guestAccessToken && guestToken === order.guestAccessToken;
 
         if (!ownedByUser && !ownedByGuestToken) {
             throw new ForbiddenException('Not authorized to view this order');
         }
 
-        const { guestAccessTokenHash, ...safeOrder } = order;
+        const { guestAccessToken, ...safeOrder } = order;
         return { ...safeOrder, canClaim: !order.buyerUserId };
     }
 
@@ -161,14 +165,14 @@ export class OrdersService {
             if (order.buyerUserId === userId) return { success: true, alreadyClaimed: true };
             throw new ForbiddenException('Order already claimed by another account');
         }
-        if (!order.guestAccessTokenHash || hashToken(guestToken) !== order.guestAccessTokenHash) {
+        if (!order.guestAccessToken || guestToken !== order.guestAccessToken) {
             throw new ForbiddenException('Invalid claim token');
         }
 
         await this.prisma.$transaction([
             this.prisma.order.update({
                 where: { id: orderId },
-                data: { buyerUserId: userId, guestAccessTokenHash: null },
+                data: { buyerUserId: userId, guestAccessToken: null },
             }),
             this.prisma.ticket.updateMany({
                 where: { orderId },
