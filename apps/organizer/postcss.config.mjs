@@ -1,7 +1,4 @@
-const config = {
-  plugins: {
-    "@tailwindcss/postcss": {},
-  },
+// apps/organizer/postcss.config.js
+module.exports = {
+  plugins: { tailwindcss: {}, autoprefixer: {} },
 };
-
-export default config;
