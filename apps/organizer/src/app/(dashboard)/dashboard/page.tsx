@@ -7,6 +7,7 @@ import { Topbar } from '@/components/layout/Topbar';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { useOrganizer } from '@/lib/use-organizer';
 import { apiClient } from '@/lib/api-client';
+import { DashboardSummary } from '@/lib/organizer-orders-types';
 
 interface EventSummary {
     id: string;
@@ -15,17 +16,27 @@ interface EventSummary {
     eventStartAt: string;
 }
 
+function formatPrice(amount: number) {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+}
+
 export default function DashboardPage() {
-    const { organizer, isLoading: isOrganizerLoading } = useOrganizer();
+    const { organizer } = useOrganizer();
     const [events, setEvents] = useState<EventSummary[]>([]);
-    const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+    const [summary, setSummary] = useState<DashboardSummary | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         if (!organizer) return;
-        apiClient
-            .get<{ items: EventSummary[] }>(`/organizers/${organizer.organizerId}/events?limit=5`)
-            .then((res) => setEvents(res.items))
-            .finally(() => setIsLoadingEvents(false));
+        Promise.all([
+            apiClient.get<{ items: EventSummary[] }>(`/organizers/${organizer.organizerId}/events?limit=5`),
+            apiClient.get<DashboardSummary>(`/organizers/${organizer.organizerId}/summary`),
+        ])
+            .then(([eventsRes, summaryRes]) => {
+                setEvents(eventsRes.items);
+                setSummary(summaryRes);
+            })
+            .finally(() => setIsLoading(false));
     }, [organizer]);
 
     return (
@@ -33,25 +44,21 @@ export default function DashboardPage() {
             <Topbar title="Overview" />
             <PageContainer>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <SalesMetricCard label="Tickets sold" value="0" icon="ri-ticket-line" />
-                    <SalesMetricCard label="Revenue" value="Rp 0" icon="ri-money-dollar-circle-line" />
-                    <SalesMetricCard label="Active events" value={String(events.filter((e) => e.status === 'PUBLISHED').length)} icon="ri-calendar-check-line" />
-                    <SalesMetricCard label="Checked in" value="0" icon="ri-qr-scan-2-line" />
+                    <SalesMetricCard label="Tiket Terjual" value={isLoading ? '...' : String(summary?.ticketsSold ?? 0)} icon="ri-ticket-line" />
+                    <SalesMetricCard label="Pendapatan" value={isLoading ? '...' : formatPrice(summary?.revenue ?? 0)} icon="ri-money-dollar-circle-line" />
+                    <SalesMetricCard label="Event Aktif" value={isLoading ? '...' : String(summary?.activeEvents ?? 0)} icon="ri-calendar-check-line" />
+                    <SalesMetricCard label="Sudah Check-in" value={isLoading ? '...' : String(summary?.checkedIn ?? 0)} icon="ri-qr-scan-2-line" />
                 </div>
 
                 <Card>
                     <CardHeader className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-[var(--color-gray-900)]">Recent events</span>
+                        <span className="text-sm font-semibold text-[var(--color-gray-900)]">Event Terbaru</span>
                     </CardHeader>
                     <CardBody className="p-0">
-                        {isOrganizerLoading || isLoadingEvents ? (
-                            <div className="p-5 text-sm text-[var(--color-gray-600)]">Loading...</div>
+                        {isLoading ? (
+                            <div className="p-5 text-sm text-[var(--color-gray-600)]">Memuat...</div>
                         ) : events.length === 0 ? (
-                            <EmptyState
-                                icon="ri-calendar-event-line"
-                                title="No events yet"
-                                description="Create your first event to start selling tickets."
-                            />
+                            <EmptyState icon="ri-calendar-event-line" title="Belum ada event" description="Buat event pertama untuk mulai menjual tiket." />
                         ) : (
                             <ul className="divide-y divide-[var(--color-gray-100)]">
                                 {events.map((event) => (

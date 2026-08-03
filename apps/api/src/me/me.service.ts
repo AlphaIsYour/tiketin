@@ -1,6 +1,9 @@
 // apps/api/src/me/me.service.ts
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { comparePassword, hashPassword } from '@tiketin/auth';
 import { PrismaService } from '../prisma/prisma.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class MeService {
@@ -19,6 +22,50 @@ export class MeService {
                 platformRole: true,
             },
         });
+    }
+
+    async updateProfile(userId: string, dto: UpdateProfileDto) {
+        const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                fullName: dto.fullName ?? user.fullName,
+                phoneNumber: dto.phoneNumber ?? user.phoneNumber,
+                avatarUrl: dto.avatarUrl ?? user.avatarUrl,
+            },
+            select: {
+                id: true,
+                email: true,
+                fullName: true,
+                phoneNumber: true,
+                avatarUrl: true,
+                status: true,
+                platformRole: true,
+            },
+        });
+    }
+
+    async changePassword(userId: string, dto: ChangePasswordDto) {
+        const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+        if (!user.passwordHash) {
+            throw new BadRequestException('This account has no password set');
+        }
+
+        const isValid = await comparePassword(dto.currentPassword, user.passwordHash);
+        if (!isValid) throw new UnauthorizedException('Current password is incorrect');
+
+        const newPasswordHash = await hashPassword(dto.newPassword);
+
+        await this.prisma.$transaction([
+            this.prisma.user.update({ where: { id: userId }, data: { passwordHash: newPasswordHash } }),
+            this.prisma.session.updateMany({
+                where: { userId, revokedAt: null },
+                data: { revokedAt: new Date() },
+            }),
+        ]);
+
+        return { success: true };
     }
 
     async getOrganizerMemberships(userId: string) {

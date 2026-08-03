@@ -1,7 +1,7 @@
 // apps/admin/src/lib/api-client.ts
 'use client';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 const STORAGE_KEY = 'tiketin_admin_auth';
 
 interface AuthTokens {

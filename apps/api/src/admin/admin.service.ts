@@ -1,6 +1,6 @@
-// apps/api/src/admin/admin.service.ts
+// apps/api/src/admin/admin.service.ts (edit: add getOrganizerDetail method)
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '@tiketin/db';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueryAdminOrganizersDto } from './dto/query-admin-organizers.dto';
 import { QueryAdminEventsDto } from './dto/query-admin-events.dto';
@@ -50,6 +50,69 @@ export class AdminService {
         ]);
 
         return { items, total, page, limit };
+    }
+
+    async getOrganizerDetail(organizerId: string) {
+        const organizer = await this.prisma.organizer.findFirst({
+            where: { id: organizerId, deletedAt: null },
+            include: {
+                storefront: { select: { isPublic: true, themePreset: true } },
+                members: {
+                    where: { status: 'ACTIVE' },
+                    include: { user: { select: { fullName: true, email: true } } },
+                    orderBy: { createdAt: 'asc' },
+                },
+            },
+        });
+        if (!organizer) throw new NotFoundException('Organizer not found');
+
+        const [events, orderStats, paidOrders, recentOrders, recentAuditLogs] = await Promise.all([
+            this.prisma.event.findMany({
+                where: { organizerId, deletedAt: null },
+                orderBy: { createdAt: 'desc' },
+                take: 10,
+                select: { id: true, title: true, status: true, eventStartAt: true },
+            }),
+            this.prisma.order.groupBy({
+                by: ['status'],
+                where: { organizerId },
+                _count: { _all: true },
+            }),
+            this.prisma.order.findMany({ where: { organizerId, status: 'PAID' }, select: { totalAmount: true } }),
+            this.prisma.order.findMany({
+                where: { organizerId },
+                orderBy: { createdAt: 'desc' },
+                take: 10,
+                select: { id: true, orderCode: true, buyerEmail: true, status: true, totalAmount: true, createdAt: true },
+            }),
+            this.prisma.auditLog.findMany({
+                where: { entityType: 'Organizer', entityId: organizerId },
+                orderBy: { createdAt: 'desc' },
+                take: 10,
+                include: { actor: { select: { fullName: true } } },
+            }),
+        ]);
+
+        const revenue = paidOrders.reduce((sum, o) => sum + Number(o.totalAmount), 0);
+        const ordersByStatus = Object.fromEntries(orderStats.map((s) => [s.status, s._count._all]));
+
+        return {
+            organizer: {
+                id: organizer.id,
+                name: organizer.name,
+                slug: organizer.slug,
+                description: organizer.description,
+                logoUrl: organizer.logoUrl,
+                status: organizer.status,
+                verificationStatus: organizer.verificationStatus,
+                createdAt: organizer.createdAt,
+                storefront: organizer.storefront,
+            },
+            staff: organizer.members.map((m) => ({ id: m.id, role: m.role, user: m.user })),
+            events,
+            orders: { byStatus: ordersByStatus, revenue, recent: recentOrders },
+            recentAuditLogs,
+        };
     }
 
     async updateOrganizerStatus(organizerId: string, dto: UpdateOrganizerStatusDto, actorUserId: string) {

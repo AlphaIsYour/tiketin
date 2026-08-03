@@ -1,20 +1,27 @@
 {
   "name": "tiketin",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "pnpm --recursive --parallel run dev",
+    "dev:api": "pnpm --filter api dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:organizer": "pnpm --filter organizer dev",
+    "dev:admin": "pnpm --filter admin dev",
+    "build:api": "pnpm --filter api build",
+    "build:web": "pnpm --filter web build",
+    "build:organizer": "pnpm --filter organizer build",
+    "build:admin": "pnpm --filter admin build",
+    "build": "pnpm --recursive run build",
+    "db:generate": "pnpm --filter @tiketin/db generate",
+    "db:push": "pnpm --filter @tiketin/db exec prisma db push",
+    "typecheck": "pnpm --recursive exec tsc --noEmit"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
       "version": "^11.15.1",
       "onFail": "download"
     }
-  },
-  "type": "module"
+  }
 }

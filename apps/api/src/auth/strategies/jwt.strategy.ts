@@ -10,7 +10,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
-            secretOrKey: process.env.JWT_ACCESS_SECRET as string,
+            secretOrKey: process.env.JWT_ACCESS_SECRET || 'tiketin_default_dev_access_secret_key_123456789',
         });
     }
 

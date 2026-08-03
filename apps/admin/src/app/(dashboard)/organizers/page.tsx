@@ -1,7 +1,8 @@
-// apps/admin/src/app/(dashboard)/organizers/page.tsx
+// apps/admin/src/app/(dashboard)/organizers/page.tsx (edit: link rows to detail page instead of inline-only actions)
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Badge, Input, Table, Td, Th } from '@tiketin/ui';
 import { Topbar } from '@/components/layout/Topbar';
 import { PageContainer } from '@/components/layout/PageContainer';
@@ -33,7 +34,6 @@ export default function OrganizersPage() {
     const [organizers, setOrganizers] = useState<OrganizerRow[]>([]);
     const [search, setSearch] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [busyId, setBusyId] = useState<string | null>(null);
 
     async function load() {
         setIsLoading(true);
@@ -47,20 +47,6 @@ export default function OrganizersPage() {
         load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-    async function updateStatus(id: string, status: string) {
-        setBusyId(id);
-        await apiClient.patch(`/admin/organizers/${id}/status`, { status });
-        await load();
-        setBusyId(null);
-    }
-
-    async function updateVerification(id: string, verificationStatus: string) {
-        setBusyId(id);
-        await apiClient.patch(`/admin/organizers/${id}/verification`, { verificationStatus });
-        await load();
-        setBusyId(null);
-    }
 
     return (
         <>
@@ -87,7 +73,7 @@ export default function OrganizersPage() {
                                     <Th>Events</Th>
                                     <Th>Status</Th>
                                     <Th>Verifikasi</Th>
-                                    <Th>Aksi</Th>
+                                    <Th></Th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -101,34 +87,9 @@ export default function OrganizersPage() {
                                         <Td><Badge tone={STATUS_TONE[o.status]}>{o.status}</Badge></Td>
                                         <Td><Badge tone={VERIFICATION_TONE[o.verificationStatus]}>{o.verificationStatus}</Badge></Td>
                                         <Td>
-                                            <div className="flex gap-2 text-xs">
-                                                {o.status !== 'SUSPENDED' ? (
-                                                    <button
-                                                        disabled={busyId === o.id}
-                                                        onClick={() => updateStatus(o.id, 'SUSPENDED')}
-                                                        className="text-[var(--color-danger)] hover:underline disabled:opacity-50"
-                                                    >
-                                                        Suspend
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        disabled={busyId === o.id}
-                                                        onClick={() => updateStatus(o.id, 'ACTIVE')}
-                                                        className="text-[var(--color-success)] hover:underline disabled:opacity-50"
-                                                    >
-                                                        Aktifkan
-                                                    </button>
-                                                )}
-                                                {o.verificationStatus !== 'VERIFIED' && (
-                                                    <button
-                                                        disabled={busyId === o.id}
-                                                        onClick={() => updateVerification(o.id, 'VERIFIED')}
-                                                        className="text-primary hover:underline disabled:opacity-50"
-                                                    >
-                                                        Verifikasi
-                                                    </button>
-                                                )}
-                                            </div>
+                                            <Link href={`/organizers/${o.id}`} className="text-primary text-sm font-medium hover:underline">
+                                                Detail
+                                            </Link>
                                         </Td>
                                     </tr>
                                 ))}

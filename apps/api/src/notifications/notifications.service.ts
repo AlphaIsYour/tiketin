@@ -1,12 +1,14 @@
-// apps/api/src/notifications/notifications.service.ts
+// apps/api/src/notifications/notifications.service.ts (edit: add sendStaffInviteEmail method)
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailProvider } from './email-provider.interface';
 import { EMAIL_PROVIDER } from './email-provider.token';
 import { orderCreatedTemplate } from './templates/order-created.template';
 import { paymentConfirmedTemplate } from './templates/payment-confirmed.template';
+import { staffInviteTemplate } from './templates/staff-invite.template';
 
 const WEB_URL = process.env.APP_WEB_URL as string;
+const ORGANIZER_URL = process.env.APP_ORGANIZER_URL as string;
 
 function formatCurrency(amount: string, currency: string) {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency, minimumFractionDigits: 0 }).format(Number(amount));
@@ -63,6 +65,21 @@ export class NotificationsService {
             await this.emailProvider.send({ to: order.buyerEmail, subject, html });
         } catch (err) {
             this.logger.error(`Failed to send payment-confirmed email for order ${orderId}`, err as Error);
+        }
+    }
+
+    async sendStaffInviteEmail(params: { email: string; organizerName: string; role: string; token: string }) {
+        try {
+            const inviteUrl = `${ORGANIZER_URL}/invites/${params.token}`;
+            const { subject, html } = staffInviteTemplate({
+                organizerName: params.organizerName,
+                role: params.role,
+                inviteUrl,
+            });
+
+            await this.emailProvider.send({ to: params.email, subject, html });
+        } catch (err) {
+            this.logger.error(`Failed to send staff invite email to ${params.email}`, err as Error);
         }
     }
 }

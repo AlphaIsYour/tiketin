@@ -7,7 +7,12 @@
     "start": "nest start",
     "dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main"
+    "start:prod": "node dist/main",
+    "seed:admin": "tsx src/scripts/seed-admin.ts",
+    "seed:dummy": "tsx src/scripts/seed-dummy.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",
@@ -17,6 +22,9 @@
     "@nestjs/mapped-types": "^2.0.6",
     "@nestjs/platform-express": "^10.4.15",
     "@nestjs/schedule": "^4.1.2",
+    "@nestjs/throttler": "^6.2.1",
+    "@nest-lab/throttler-storage-redis": "^1.0.0",
+    "ioredis": "^5.4.1",
     "@prisma/client": "^6.2.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
@@ -35,8 +43,33 @@
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",
     "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.0",
     "@types/node": "^20.17.10",
     "@types/passport-jwt": "^4.0.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@tiketin/(.*)$": "<rootDir>/../../../packages/$1/src",
+      "^(\\.\\.?/.*)\\.js$": "$1"
+    }
   }
 }

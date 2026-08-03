@@ -1,4 +1,4 @@
-// apps/api/src/admin/admin.controller.ts
+// apps/api/src/admin/admin.controller.ts (edit: add organizer detail route)
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtPayload } from '@tiketin/auth';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -26,6 +26,11 @@ export class AdminController {
     @Get('organizers')
     listOrganizers(@Query() query: QueryAdminOrganizersDto) {
         return this.adminService.listOrganizers(query);
+    }
+
+    @Get('organizers/:organizerId')
+    getOrganizerDetail(@Param('organizerId') organizerId: string) {
+        return this.adminService.getOrganizerDetail(organizerId);
     }
 
     @Patch('organizers/:organizerId/status')

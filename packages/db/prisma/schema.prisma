@@ -38,6 +38,13 @@ enum OrganizerMemberRole {
   SCANNER
 }
 
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
 enum OrganizerMemberStatus {
   ACTIVE
   INVITED
@@ -112,6 +119,7 @@ model User {
 
   ownedOrganizers      Organizer[]       @relation("OrganizerOwner")
   organizerMemberships OrganizerMember[]
+  sentOrganizerInvites OrganizerInvite[]
   orders               Order[]
   tickets              Ticket[]
   sessions             Session[]
@@ -156,11 +164,33 @@ model Organizer {
   deletedAt          DateTime?                   @map("deleted_at")
 
   members    OrganizerMember[]
+  invites    OrganizerInvite[]
   events     Event[]
   storefront OrganizerStorefront?
 
   @@index([ownerUserId])
   @@map("organizers")
+}
+
+model OrganizerInvite {
+  id              String              @id @default(uuid())
+  organizerId     String              @map("organizer_id")
+  organizer       Organizer           @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  email           String
+  role            OrganizerMemberRole
+  token           String              @unique
+  status          InviteStatus        @default(PENDING)
+  invitedByUserId String              @map("invited_by_user_id")
+  invitedBy       User                @relation(fields: [invitedByUserId], references: [id])
+  expiresAt       DateTime            @map("expires_at")
+  acceptedAt      DateTime?           @map("accepted_at")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  @@index([organizerId])
+  @@index([email])
+  @@index([status])
+  @@map("organizer_invites")
 }
 
 model OrganizerMember {

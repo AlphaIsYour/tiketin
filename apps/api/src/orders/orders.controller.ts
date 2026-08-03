@@ -1,5 +1,6 @@
 // apps/api/src/orders/orders.controller.ts
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { JwtPayload } from '@tiketin/auth';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
@@ -14,6 +15,7 @@ export class OrdersController {
 
     @Post()
     @UseGuards(OptionalJwtAuthGuard)
+    @Throttle({ default: { limit: 5, ttl: 60_000 } })
     create(@CurrentUser() user: JwtPayload | null, @Body() dto: CreateOrderDto) {
         return this.ordersService.create(dto, user?.sub);
     }
@@ -30,6 +32,7 @@ export class OrdersController {
 
     @Post(':orderId/claim')
     @UseGuards(JwtAuthGuard)
+    @Throttle({ default: { limit: 10, ttl: 60_000 } })
     claim(
         @CurrentUser() user: JwtPayload,
         @Param('orderId') orderId: string,

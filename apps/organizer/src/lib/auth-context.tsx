@@ -1,4 +1,4 @@
-// apps/organizer/src/lib/auth-context.tsx
+// apps/organizer/src/lib/auth-context.tsx 
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
@@ -14,6 +14,7 @@ interface AuthContextValue {
     isAuthenticated: boolean;
     isLoading: boolean;
     login: (email: string, password: string) => Promise<void>;
+    register: (fullName: string, email: string, password: string) => Promise<void>;
     logout: () => void;
 }
 
@@ -50,7 +51,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
         apiClient.setAccessToken(tokens.accessToken);
         setIsAuthenticated(true);
-        router.push('/dashboard');
+    }
+
+    async function register(fullName: string, email: string, password: string) {
+        const tokens = await apiClient.post<AuthTokens>('/auth/register', { fullName, email, password });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
+        apiClient.setAccessToken(tokens.accessToken);
+        setIsAuthenticated(true);
     }
 
     function logout() {
@@ -61,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout }}>
+        <AuthContext.Provider value={{ isAuthenticated, isLoading, login, register, logout }}>
             {children}
         </AuthContext.Provider>
     );
