@@ -1,10 +1,10 @@
 {
   "name": "@tiketin/core",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "main": "src/index.ts",
-  "dependencies": {},
+  "types": "src/index.ts",
   "devDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.5.0"
   }
 }
